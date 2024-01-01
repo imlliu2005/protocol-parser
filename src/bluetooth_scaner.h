@@ -2,9 +2,6 @@
 #define BLUETOOTH_SCANER_H
 
 #include <QObject>
-
-// bluetooth
-
 #include <QtBluetooth/QBluetoothDeviceDiscoveryAgent> //发现设备
 #include <QtBluetooth/QBluetoothDeviceInfo>           //设备信息
 

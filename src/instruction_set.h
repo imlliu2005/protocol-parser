@@ -1,0 +1,13 @@
+#include <cstdint>
+// 握手命令蓝牙
+// 5A 05 82 E2 D2
+uint8_t hand_shake_cmd[] = {0x5A, 0x05, 0x82, 0xE2, 0xD2};
+
+// 取得设备记录条数
+// 5A 05 53 BE 12
+uint8_t get_record_count_cmd[] = {0x5A, 0x05, 0x53, 0xBE, 0x12};
+
+// 读取得指定记录数据命令
+// 5A 07 54 00 1E A1 BC
+uint8_t get_specified_record_cmd[] = {0x5A, 0x07, 0x54, 0x00, 0x1E, 0xA1,0xBC};
+

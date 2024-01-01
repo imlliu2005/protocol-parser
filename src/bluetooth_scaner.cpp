@@ -6,13 +6,18 @@
 bluetooth_scaner::bluetooth_scaner(QObject *parent) : QObject(parent)
 {
     device_name_ = "Tv231u-C3DDCD39";
+    device_discovery_agent_ = nullptr;
+    found_device_ = false;
     create_bluetooth_agent();
-    bind_singal_and_slot();
 }
 
 bluetooth_scaner::~bluetooth_scaner()
 {
-
+    if (device_discovery_agent_) 
+    {
+        delete device_discovery_agent_;
+        device_discovery_agent_ = nullptr;
+    }
 }
 
 void bluetooth_scaner::scan_bluetooth()
@@ -48,9 +53,12 @@ QBluetoothDeviceInfo bluetooth_scaner::get_device_info()
 
 void bluetooth_scaner::create_bluetooth_agent()
 {
-    device_discovery_agent_ = new QBluetoothDeviceDiscoveryAgent();     // 创建对象
-    device_discovery_agent_->setLowEnergyDiscoveryTimeout(0);           // 一直搜索找到为止
-    found_device_ = false;
+    device_discovery_agent_ = new QBluetoothDeviceDiscoveryAgent();     
+    if (device_discovery_agent_)
+    {
+        bind_singal_and_slot();
+        device_discovery_agent_->setLowEnergyDiscoveryTimeout(0); 
+    }
 }
 
 void bluetooth_scaner::bind_singal_and_slot()
@@ -73,7 +81,7 @@ void bluetooth_scaner::slot_device_discovered_one(const QBluetoothDeviceInfo &de
                  << " uuid:" << dev_info.deviceUuid();
         if (0 == device_name_.compare(dev_info.name().toStdString()))
         {
-             qDebug() << "found required device = " << dev_info.name();
+             qDebug() << "found required device:" << dev_info.name();
             device_info_ = dev_info;
             found_device_ = true;
             device_discovery_agent_->stop();
@@ -90,15 +98,15 @@ void bluetooth_scaner::slot_device_discovery_finish()
 {
     if (!found_device_)
     {
-        qDebug()<<"not found device over...";
+        qDebug() << "not found device over...";
         return;
     }
-    qDebug()<< "slot_device_discovery_finish...";
+    qDebug() << "slot_device_discovery_finish...";
 }
 
 void bluetooth_scaner::slot_device_cancle_scan()
 {
-    qDebug()<<"device found stop scan...";
+    qDebug() << "device found stop scan...";
 }
 
 

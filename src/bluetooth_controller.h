@@ -2,12 +2,16 @@
 #define BLUETOOTH_CONTROLLER_H
 
 #include <QObject>
+#include <QDebug>
+#include <QTimer>
+#include <QEventLoop>
 #include <QLowEnergyController>
-#include "bluetooth_scaner.h"
-#include "bluetooth_service.h"
 #include <QtBluetooth/QLowEnergyDescriptor>                                               //ble 描述符
 #include <QtBluetooth/QLowEnergyService>                                                  //ble 服务
 #include <QtBluetooth/QLowEnergyCharacteristic>                                           //ble 特性
+#include "bluetooth_scaner.h"
+
+#define CHUNK_SIZE 25
 
 const std::string WRITE_SERVER_UUID = "0000ffe5-0000-1000-8000-00805f9b34fb";             //65509
 const std::string WRITE_CHARACTERISTIC_UUID = "0000ffe9-0000-1000-8000-00805f9b34fb";     //65513
@@ -29,12 +33,13 @@ public:
     void create_write_service_object();
     void create_notify_service_object();
     // 向蓝牙设备写入数据
-    void write(const QByteArray &data);
+    void write(uint8_t* arr, uint16_t len);
     void test_send1();
     void test_send2();
     void test_send3();
 
 private:
+    void wait_for_write();
     // 接收通知数据
     void receive_notify_data(const QLowEnergyCharacteristic &c, const QByteArray &value);    
     // 发现服务相关
@@ -58,7 +63,6 @@ private:
 
 private:
     bluetooth_scaner* ble_scaner_;                                          // 蓝牙扫描对象
-    bluetooth_service* bluetooth_service_;                                  // 数据服务对象
     QLowEnergyController* ble_controller_;                                  // 低功耗蓝牙控制
     QBluetoothUuid wirte_service_uuid_;                                     // 服务uuid
     QBluetoothUuid notify_service_uuid_;                                    // 服务uuid

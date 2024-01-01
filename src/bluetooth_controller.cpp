@@ -1,7 +1,5 @@
 #include "bluetooth_controller.h"
-#include "bluetooth_service.h"
-#include <QDebug>
-#include <QTimer>
+#include "instruction_set.h"
 
 bluetooth_controller::bluetooth_controller(QObject *parent) : QObject(parent)
 {
@@ -95,7 +93,7 @@ void bluetooth_controller::connect_device()
 {
     if(ble_scaner_->is_device_found())
     {
-        ble_controller_->connectToDevice(); // 连接设备
+        ble_controller_->connectToDevice();
     }
     else
     {
@@ -273,10 +271,11 @@ void bluetooth_controller::slot_notify_service_state_changed(QLowEnergyService::
                 QList<QLowEnergyDescriptor> desc_list = cur_character.descriptors();
                 for (int d = 0; d < desc_list.count(); d++)
                 {
-                    qDebug() << "descriptor[" << d << "]: name = " << desc_list.at(d).name()
-                        << "\ntype = " << desc_list.at(d).type()
-                        << "\nuuid = " << desc_list.at(d).uuid().toString()
-                        << "\nvalue = " << desc_list.at(d).value();
+                    qDebug() << "descriptor[" << d << "] name:" 
+                        << desc_list.at(d).name()
+                        << "\ntype:" << desc_list.at(d).type()
+                        << "\nuuid:" << desc_list.at(d).uuid().toString()
+                        << "\nvalue:" << desc_list.at(d).value();
                 }
 
                 if (cur_character.properties() & QLowEnergyCharacteristic::WriteNoResponse)
@@ -304,8 +303,11 @@ void bluetooth_controller::slot_notify_service_state_changed(QLowEnergyService::
                 QLowEnergyDescriptor descriptor = cur_character.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
                 if (descriptor.isValid())
                 {
-                    // 0100 enable notification  0000 disable notification
-                    ble_notify_service_->writeDescriptor(descriptor, QByteArray::fromHex("0100")); 
+                    if(cur_character.properties() & QLowEnergyCharacteristic::Notify)
+                    {
+                        // 0100 enable notification  0000 disable notification
+                        ble_notify_service_->writeDescriptor(descriptor, QByteArray::fromHex("0100")); 
+                    }
                 }
             }
         } // end for list
@@ -375,8 +377,16 @@ void bluetooth_controller::slot_service_error(QLowEnergyService::ServiceError er
     }
 }
 
-void bluetooth_controller::write(const QByteArray &data)
+void bluetooth_controller::wait_for_write()
 {
+    QEventLoop loop;
+    connect(ble_write_service_, SIGNAL(characteristicWritten(QLowEnergyCharacteristic,QByteArray)), &loop, SLOT(quit()));
+    loop.exec();
+}
+
+void bluetooth_controller::write(uint8_t* arr, uint16_t len)
+{
+    QByteArray data = QByteArray((char*)arr, len);
     if(ble_write_service_ && write_characteristic_.isValid())
     {
         if(data.length() > CHUNK_SIZE)
@@ -386,46 +396,51 @@ void bluetooth_controller::write(const QByteArray &data)
             {
                 ble_write_service_->writeCharacteristic(write_characteristic_,data.mid(sentBytes, CHUNK_SIZE),write_mode_);
                 sentBytes += CHUNK_SIZE;
+                if(write_mode_ == QLowEnergyService::WriteWithResponse)
+                {
+                    wait_for_write();
+                    if(ble_write_service_->error() != QLowEnergyService::NoError)
+                    {
+                        qDebug() << "write data error...";
+                         return;
+                    }
+                }
             }
         }
         else
         {
              ble_write_service_->writeCharacteristic(write_characteristic_, data, write_mode_);
         }
-
     }
 }
 
 void bluetooth_controller::test_send1()
 {
     // 在这里写一条数据试试
-        // 握手命令蓝牙
-        //        5A 05 82 E2 D2
-        uint8_t arr[] = {0x5A, 0x05, 0x82, 0xE2, 0xD2};
-    
-        QByteArray byte;
-        byte = QByteArray((char*)arr,sizeof (arr));
-        write(byte);
+    // 握手命令蓝牙
+    // 5A 05 82 E2 D2
+    uint8_t arr[] = {0x5A, 0x05, 0x82, 0xE2, 0xD2};
+    QByteArray byte;
+    byte = QByteArray((char*)arr,sizeof (arr));
+    write(hand_shake_cmd, sizeof(hand_shake_cmd));
 }
 
 void bluetooth_controller::test_send2()
 {
-          // 取得设备记录条数
-        //        5A 05 53 BE 12
-        uint8_t arr[] = {0x5A, 0x05, 0x53, 0xBE, 0x12};
-
-        QByteArray byte;
-        byte = QByteArray((char*)arr,sizeof (arr));
-        write(byte);
+    // 取得设备记录条数
+    // 5A 05 53 BE 12
+    uint8_t arr[] = {0x5A, 0x05, 0x53, 0xBE, 0x12};
+    QByteArray byte;
+    byte = QByteArray((char*)arr,sizeof (arr));
+   write(get_record_count_cmd, sizeof(get_record_count_cmd));
 }
 
 void bluetooth_controller::test_send3()
 {
-        // 读取得指定记录数据命令
-        //        5A 07 54 00 1E A1 BC
-         uint8_t arr[] = {0x5A, 0x07, 0x54, 0x00, 0x1E, 0xA1,0xBC};
-
-        QByteArray byte;
-        byte = QByteArray((char*)arr,sizeof (arr));
-        write(byte);
+    // 读取得指定记录数据命令
+    //  5A 07 54 00 1E A1 BC
+    uint8_t arr[] = {0x5A, 0x07, 0x54, 0x00, 0x1E, 0xA1,0xBC};
+    QByteArray byte;
+    byte = QByteArray((char*)arr,sizeof (arr));
+    write(get_specified_record_cmd, sizeof(get_specified_record_cmd));
 }
