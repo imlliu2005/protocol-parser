@@ -31,6 +31,16 @@ bool bluetooth_scaner::is_device_found()
     return found_device_;
 }
 
+void bluetooth_scaner::set_device_mac(std::string mac)
+{
+    device_mac_ = mac;
+}
+
+void bluetooth_scaner::set_device_address(std::string address)
+{
+    device_address_ = address;
+}
+
 QBluetoothDeviceInfo bluetooth_scaner::get_device_info()
 {
     return device_info_;
@@ -38,8 +48,8 @@ QBluetoothDeviceInfo bluetooth_scaner::get_device_info()
 
 void bluetooth_scaner::create_bluetooth_agent()
 {
-    device_discovery_agent_ = new QBluetoothDeviceDiscoveryAgent(); // 创建对象
-    device_discovery_agent_->setLowEnergyDiscoveryTimeout(20 * 1000); //20s
+    device_discovery_agent_ = new QBluetoothDeviceDiscoveryAgent();     // 创建对象
+    device_discovery_agent_->setLowEnergyDiscoveryTimeout(0);           // 一直搜索找到为止
     found_device_ = false;
 }
 
@@ -58,14 +68,14 @@ void bluetooth_scaner::slot_device_discovered_one(const QBluetoothDeviceInfo &de
     // 名称不为空且是低功耗蓝牙,则考虑加进去
     if (dev_info.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration)
     {
-        qDebug() << "LowEnergyCoreConfiguration device: name = " << dev_info.name()
-                 << ", address = " << dev_info.address()
-                 << ", uuid = " << dev_info.deviceUuid();
+        qDebug() << "LowEnergyCoreConfiguration device name:" << dev_info.name()
+                 << " address:" << dev_info.address()
+                 << " uuid:" << dev_info.deviceUuid();
         if (0 == device_name_.compare(dev_info.name().toStdString()))
         {
+             qDebug() << "found required device = " << dev_info.name();
             device_info_ = dev_info;
             found_device_ = true;
-            qDebug() << "found required device = " << dev_info.name();
             device_discovery_agent_->stop();
         }
     }

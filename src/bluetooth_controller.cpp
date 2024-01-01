@@ -7,11 +7,8 @@ bluetooth_controller::bluetooth_controller(QObject *parent) : QObject(parent)
 {
     ble_scaner_ = new bluetooth_scaner(this);
     ble_controller_ = nullptr;
-    device_connected_ = false;
     ble_write_service_ = nullptr;
     ble_notify_service_ = nullptr;
-    // notify_service_uuid_ = QBluetoothUuid(QString::fromStdString(NOTIFY_SERVER_UUID));
-    // wirte_service_uuid_ = QBluetoothUuid(QString::fromStdString(WRITE_SERVER_UUID));
 }
 
 bluetooth_controller::~bluetooth_controller()
@@ -31,6 +28,8 @@ void bluetooth_controller::bind_device_slot()
     connect(ble_controller_, &QLowEnergyController::connected, this, &bluetooth_controller::slot_device_connected);                 // 设备连接成功
     void (QLowEnergyController::*bleDeviceConnectionErrorOccurred)(QLowEnergyController::Error) = &QLowEnergyController::error;     // 有重载
     connect(ble_controller_, bleDeviceConnectionErrorOccurred, this, &bluetooth_controller::slot_device_connect_error);             // 设备连接出现错误
+    connect(ble_controller_, &QLowEnergyController::disconnected, this, &bluetooth_controller::slot_device_disconnected); //设备断开链接
+
     // 发现服务
     connect(ble_controller_, &QLowEnergyController::serviceDiscovered, this, &bluetooth_controller::slot_service_discovered_one);   // 发现一个服务
     connect(ble_controller_, &QLowEnergyController::discoveryFinished, this, &bluetooth_controller::slot_service_discovery_finish); // 服务发现结束
@@ -40,14 +39,9 @@ void bluetooth_controller::bind_write_service_slot()
 {
     // 监听服务状态变化
     connect(ble_write_service_, &QLowEnergyService::stateChanged, this, &bluetooth_controller::slot_write_service_state_changed);
-    // 服务的characteristic变化,有数据传来
-    connect(ble_write_service_, &QLowEnergyService::characteristicChanged, this, &bluetooth_controller::slot_service_characteristic_changed);
-    // 错误处理
+   // 错误处理
     void (QLowEnergyService::*bleServiceErrorOccurred)(QLowEnergyService::ServiceError) = &QLowEnergyService::error; // 有重载
     connect(ble_write_service_, bleServiceErrorOccurred, this, &bluetooth_controller::slot_service_error);
-    // 描述符成功被写
-    connect(ble_write_service_, &QLowEnergyService::descriptorWritten, this, &bluetooth_controller::slot_service_descriptor_written);
-    //
     connect(ble_write_service_, &QLowEnergyService::characteristicWritten, this, &bluetooth_controller::slot_service_character_written);
 }
 
@@ -56,20 +50,24 @@ void bluetooth_controller::bind_notify_service_slot()
     // 监听服务状态变化
     connect(ble_notify_service_, &QLowEnergyService::stateChanged, this, &bluetooth_controller::slot_notify_service_state_changed);
     // 服务的characteristic变化,有数据传来
+    // 备注：Notify的特征的数据回传触发的是QLowEnergyService::characteristicChanged，并不是QLowEnergyService::characteristicRead
     connect(ble_notify_service_, &QLowEnergyService::characteristicChanged, this, &bluetooth_controller::slot_service_characteristic_changed);
     // 错误处理
     void (QLowEnergyService::*bleServiceErrorOccurred)(QLowEnergyService::ServiceError) = &QLowEnergyService::error; // 有重载
     connect(ble_notify_service_, bleServiceErrorOccurred, this, &bluetooth_controller::slot_service_error);
-    connect(ble_notify_service_, &QLowEnergyService::characteristicRead, this, &bluetooth_controller::slot_service_recv_data);
-
+   // 描述符成功被写
+    connect(ble_notify_service_, &QLowEnergyService::descriptorWritten, this, &bluetooth_controller::slot_service_descriptor_written);
 }
 
 void bluetooth_controller::slot_device_connected()
 {
-    qDebug() << "device connected success...";
-    device_connected_ = true;
-    qDebug() << "begin discover service...";
+    qDebug() << "device connected success and begin discover service...";
     discover_services();
+}
+
+void bluetooth_controller::slot_device_disconnected()
+{
+    qDebug() << "device disconnected...";
 }
 
 void bluetooth_controller::slot_device_connect_error(QLowEnergyController::Error error)
@@ -79,7 +77,6 @@ void bluetooth_controller::slot_device_connect_error(QLowEnergyController::Error
 
 void bluetooth_controller::create_ble_controller()
 {
-    qDebug() << "device_info... "<< ble_scaner_->get_device_info().address();
     ble_controller_ = QLowEnergyController::createCentral(ble_scaner_->get_device_info()); // central相当于是主机
     if (ble_controller_) 
     {
@@ -116,10 +113,7 @@ void bluetooth_controller::discover_services()
 // 发现一个服务
 void bluetooth_controller::slot_service_discovered_one(QBluetoothUuid service_uuid)
 {
-    qDebug() << "found one service uuid =  "
-        << service_uuid.toString()
-        << "toUint = " 
-        << service_uuid.toUInt32();
+    qDebug() << "found one service uuid: "<< service_uuid.toString() << " toUint = " << service_uuid.toUInt32();
 
     if (service_uuid == QBluetoothUuid(QString::fromStdString(WRITE_SERVER_UUID)))
     {
@@ -129,10 +123,19 @@ void bluetooth_controller::slot_service_discovered_one(QBluetoothUuid service_uu
             this->connect_write_service();
         });
 
-         QTimer::singleShot(10000, [=](){
-            this->test_send();
+        QTimer::singleShot(2000, [=](){
+            this->test_send1();
         });
+
+        QTimer::singleShot(3000, [=](){
+            this->test_send2();
+        });
+
+        // QTimer::singleShot(4000, [=](){
+        //     this->test_send3();
+        // });
     }
+
     if (service_uuid == QBluetoothUuid(QString::fromStdString(NOTIFY_SERVER_UUID)))
     {
         qDebug() << "found notify service uuid = " << service_uuid.toString();
@@ -183,28 +186,10 @@ void bluetooth_controller::connect_notify_service()
 // 服务状态变化
 void bluetooth_controller::slot_write_service_state_changed(QLowEnergyService::ServiceState state) // 服务状态改变
 {
-    if (QLowEnergyService::InvalidService == state)
-    {
-        qDebug() << "state is InvalidService...";
-    }
-    if (QLowEnergyService::DiscoveryRequired == state)
-    {
-        qDebug() << "state is DiscoveryRequired...";
-    }
-    if (QLowEnergyService::DiscoveringServices == state)
-    {
-        qDebug() << "state is DiscoveringServices..";
-    }
-    if (QLowEnergyService::LocalService == state)
-    {
-        qDebug() << "state is LocalService...";
-    }
     if (QLowEnergyService::ServiceDiscovered == state) // 发现服务
     {
-        qDebug() << "state is ServiceDiscovered...";
+        qDebug() << "write service state is ServiceDiscovered...";
         QList<QLowEnergyCharacteristic> list = ble_write_service_->characteristics();
-        qDebug() << "QLowEnergyCharacteristic list count = " << list.count();
-        bool found_valid_descriptor = false;
         for (int i = 0; i < list.count(); i++)
         {
             // 当前位置的bleCharacteritic
@@ -212,13 +197,78 @@ void bluetooth_controller::slot_write_service_state_changed(QLowEnergyService::S
             // 如果当前characteristic有效
             if (cur_character.isValid())
             {
-                qDebug() << "cur_character (" << i << ") is valid, \n name = " 
-                    << cur_character.name()
-                    << "\n property = " << cur_character.properties()
-                    << "\n uuid = " << cur_character.uuid().toString()
-                    << "\n isvalid = " << cur_character.isValid()
-                    << "\n value = " << cur_character.value().data()
-                    << "\n descriptors count = " << cur_character.descriptors().count();
+                qDebug() << "cur_character(" << i << ")is valid"
+                    << "\nname:" << cur_character.name()
+                    << "\nproperty:" << cur_character.properties()
+                    << "\nuuid:" << cur_character.uuid().toString()
+                    << "\nisvalid:" << cur_character.isValid()
+                    << "\nvalue:" << cur_character.value().data()
+                    << "\ndescriptors count:" << cur_character.descriptors().count();
+
+                QList<QLowEnergyDescriptor> desc_list = cur_character.descriptors();
+                for (int d = 0; d < desc_list.count(); d++)
+                {
+                    qDebug() << "descriptor[" << d << "]: name: " << desc_list.at(d).name()
+                        << "\ntype: " << desc_list.at(d).type()
+                        << "\nuuid: " << desc_list.at(d).uuid().toString()
+                        << "\nvalue: " << desc_list.at(d).value();
+                }
+                if (cur_character.properties() & QLowEnergyCharacteristic::WriteNoResponse)
+                {
+                    qDebug() << "this characteristic has WriteNoResponse property" << cur_character.uuid().toString();
+                }
+                if (cur_character.properties() & QLowEnergyCharacteristic::Write)
+                {
+                    write_characteristic_ = cur_character;
+                    write_mode_ = QLowEnergyService::WriteWithResponse;
+                    qDebug() << "this characteristic has Write property" << cur_character.uuid().toString();
+                }
+                if (cur_character.properties() & QLowEnergyCharacteristic::Read)
+                {
+                    read_characteristic_ = cur_character;
+                    qDebug() << "this characteristic has Read property" << cur_character.uuid().toString();
+                }
+                if (cur_character.properties() & QLowEnergyCharacteristic::Notify)
+                {
+                    read_characteristic_ = cur_character;
+                    qDebug() << "this characteristic has Notify property" << cur_character.uuid().toString();
+                }
+
+                // 描述符定义特征如何由特定客户端配置
+                // QLowEnergyDescriptor descriptor = cur_character.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
+                // if (descriptor.isValid())
+                // {
+                //     // 0100 enable notification  0000 disable notification
+                //     ble_write_service_->writeDescriptor(descriptor, QByteArray::fromHex("0100")); 
+                //     qDebug() << "ble_write_service_ write descriptor enable notification 0100... "<< cur_character.uuid().toString();
+                // }
+            }
+        } // end for list
+    } // end 发现服务
+}
+
+// 服务状态变化
+void bluetooth_controller::slot_notify_service_state_changed(QLowEnergyService::ServiceState state) // 服务状态改变
+{
+    if (QLowEnergyService::ServiceDiscovered == state) // 发现服务
+    {
+        qDebug() << "notify service state is ServiceDiscovered...";
+        QList<QLowEnergyCharacteristic> list = ble_notify_service_->characteristics();
+        qDebug() << "QLowEnergyCharacteristic list count:" << list.count();
+        for (int i = 0; i < list.count(); i++)
+        {
+            // 当前位置的bleCharacteritic
+            QLowEnergyCharacteristic cur_character = list.at(i);
+            // 如果当前characteristic有效
+            if (cur_character.isValid())
+            {
+                qDebug() << "cur_character("<< i <<") is valid"
+                    << "\nname:" << cur_character.name()
+                    << "\nproperty:" << cur_character.properties()
+                    << "\nuuid:" << cur_character.uuid().toString()
+                    << "\nisvalid:" << cur_character.isValid()
+                    << "\nvalue:" << cur_character.value()
+                    << "\ndescriptors count:" << cur_character.descriptors().count();
 
                 QList<QLowEnergyDescriptor> desc_list = cur_character.descriptors();
                 for (int d = 0; d < desc_list.count(); d++)
@@ -226,13 +276,11 @@ void bluetooth_controller::slot_write_service_state_changed(QLowEnergyService::S
                     qDebug() << "descriptor[" << d << "]: name = " << desc_list.at(d).name()
                         << "\ntype = " << desc_list.at(d).type()
                         << "\nuuid = " << desc_list.at(d).uuid().toString()
-                        << "\nvalue = " << desc_list.at(d).value().data();
+                        << "\nvalue = " << desc_list.at(d).value();
                 }
 
                 if (cur_character.properties() & QLowEnergyCharacteristic::WriteNoResponse)
                 {
-                    write_characteristic_ = cur_character;
-                    write_mode_ = QLowEnergyService::WriteWithoutResponse;
                     qDebug() << "this characteristic has WriteNoResponse property" << cur_character.uuid().toString();
                 }
                 if (cur_character.properties() & QLowEnergyCharacteristic::Write)
@@ -243,124 +291,28 @@ void bluetooth_controller::slot_write_service_state_changed(QLowEnergyService::S
                 }
                 if (cur_character.properties() & QLowEnergyCharacteristic::Read)
                 {
-                    qDebug() << "this characteristic has Read property" << cur_character.uuid().toString();
                     read_characteristic_ = cur_character;
+                    qDebug() << "this characteristic has Read property" << cur_character.uuid().toString();
                 }
                 if (cur_character.properties() & QLowEnergyCharacteristic::Notify)
                 {
-                    qDebug() << "this characteristic has Notify property" << cur_character.uuid().toString();
                     notify_characteristic_ = cur_character;
+                    qDebug() << "this characteristic has Notify property" << cur_character.uuid().toString();
                 }
 
                 // 描述符定义特征如何由特定客户端配置
-                QLowEnergyDescriptor descriptor = cur_character.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
-                qDebug()<<"descriptor... "<< descriptor.name();
-                if (descriptor.isValid())
-                {
-                    qDebug() << "this descriptor (" << i << ") is valid";
-                    // 0100 enable notification  0000 disable notification
-                    ble_write_service_->writeDescriptor(descriptor, QByteArray::fromHex("0100")); 
-                    found_valid_descriptor = true;
-                }
+                // QLowEnergyDescriptor descriptor = cur_character.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
+                // if (descriptor.isValid())
+                // {
+                //     if (QLowEnergyCharacteristic::Notify == cur_character.properties())
+                //     {
+                //         // 0100 enable notification  0000 disable notification
+                //         ble_notify_service_->writeDescriptor(descriptor, QByteArray::fromHex("0100")); 
+                //         qDebug() << "ble_notify_service_ write descriptor enable notification 0100 "<< descriptor.name();
+                //     }
+                // }
             }
         } // end for list
-
-        if (!found_valid_descriptor)
-        {
-            qDebug() <<"found valid descriptor error...";
-        }
-
-    } // end 发现服务
-}
-
-// 服务状态变化
-void bluetooth_controller::slot_notify_service_state_changed(QLowEnergyService::ServiceState state) // 服务状态改变
-{
-    if (QLowEnergyService::InvalidService == state)
-    {
-        qDebug() << "state is InvalidService...";
-    }
-    if (QLowEnergyService::DiscoveryRequired == state)
-    {
-        qDebug() << "state is DiscoveryRequired...";
-    }
-    if (QLowEnergyService::DiscoveringServices == state)
-    {
-        qDebug() << "state is DiscoveringServices..";
-    }
-    if (QLowEnergyService::LocalService == state)
-    {
-        qDebug() << "state is LocalService...";
-    }
-    if (QLowEnergyService::ServiceDiscovered == state) // 发现服务
-    {
-        qDebug() << "state is ServiceDiscovered...";
-        QList<QLowEnergyCharacteristic> list = ble_notify_service_->characteristics();
-        qDebug() << "QLowEnergyCharacteristic list count = " << list.count();
-        bool found_valid_descriptor = false;
-        for (int i = 0; i < list.count(); i++)
-        {
-            // 当前位置的bleCharacteritic
-            QLowEnergyCharacteristic cur_character = list.at(i);
-            // 如果当前characteristic有效
-            if (cur_character.isValid())
-            {
-                qDebug() << "cur_character (" << i << ") is valid, \n name = " << cur_character.name()
-                         << "\n property = " << cur_character.properties()
-                         << "\n uuid = " << cur_character.uuid().toString()
-                         << "\n isvalid = " << cur_character.isValid()
-                         << "\n value = " << cur_character.value().data()
-                         << "\n descriptors count = " << cur_character.descriptors().count();
-
-                QList<QLowEnergyDescriptor> desc_list = cur_character.descriptors();
-                for (int d = 0; d < desc_list.count(); d++)
-                {
-                    qDebug() << "descriptor[" << d << "]: name = " << desc_list.at(d).name()
-                             << "\ntype = " << desc_list.at(d).type()
-                             << "\nuuid = " << desc_list.at(d).uuid().toString()
-                             << "\nvalue = " << desc_list.at(d).value().data();
-                }
-
-                if (cur_character.properties() & QLowEnergyCharacteristic::WriteNoResponse)
-                {
-                    write_characteristic_ = cur_character;
-                    write_mode_ = QLowEnergyService::WriteWithoutResponse;
-                    qDebug() << "this characteristic has WriteNoResponse property" << cur_character.uuid().toString();
-                }
-                if (cur_character.properties() & QLowEnergyCharacteristic::Write)
-                {
-                    write_characteristic_ = cur_character;
-                    write_mode_ = QLowEnergyService::WriteWithResponse;
-                    qDebug() << "this characteristic has Write property" << cur_character.uuid().toString();
-                }
-                if (cur_character.properties() & QLowEnergyCharacteristic::Read)
-                {
-                    qDebug() << "this characteristic has Read property" << cur_character.uuid().toString();
-                    read_characteristic_ = cur_character;
-                }
-                if (cur_character.properties() & QLowEnergyCharacteristic::Notify)
-                {
-                    qDebug() << "this characteristic has Notify property" << cur_character.uuid().toString();
-                    notify_characteristic_ = cur_character;
-                }
-
-                // 描述符定义特征如何由特定客户端配置
-                QLowEnergyDescriptor descriptor = cur_character.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
-                qDebug()<<"descriptor... "<< descriptor.name();
-                if (descriptor.isValid())
-                {
-                    qDebug() << "this descriptor (" << i << ") is valid";
-                    // 0100 enable notification  0000 disable notification
-                    ble_notify_service_->writeDescriptor(descriptor, QByteArray::fromHex("0100")); 
-                    found_valid_descriptor = true;
-                }
-            }
-        } // end for list
-
-        if (!found_valid_descriptor)
-        {
-            qDebug() <<"found valid descriptor error...";
-        }
 
     } // end 发现服务
 }
@@ -368,33 +320,34 @@ void bluetooth_controller::slot_notify_service_state_changed(QLowEnergyService::
 // 特性发生变化的槽函数，处理接收数据：
 void bluetooth_controller::slot_service_characteristic_changed(QLowEnergyCharacteristic c, QByteArray value)
 {
-    qDebug() << "slot_service_characteristic_changed : " << c.uuid().toString() << ", properties = " << c.properties();
-    // if (QLowEnergyCharacteristic::Notify == c.properties())
-    // {
-    //     // 接收数据
-    //     slot_service_recv_data(c, value);
-    // }
+    QByteArray hex_array = value.toHex(':');
+    qDebug() << "slot_service_characteristic_changed:" << c.uuid().toString() 
+    << " value:" << hex_array.data() ;
+    if (QLowEnergyCharacteristic::Notify == c.properties())
+    {
+        // 接收数据
+        receive_notify_data(c, value);
+    }
 }
 
 void bluetooth_controller::slot_service_descriptor_written(const QLowEnergyDescriptor &descriptor, const QByteArray &value)
 {
+    QByteArray hex_array = value.toHex(':');
     // 当描述符descriptor被正确地写入值之后，BLE通讯就成功建立。
-    qDebug() << "slot_service_descriptor_written...";
+    qDebug() <<"descriptor: "  << descriptor.uuid().toString()<<" value:" << hex_array.data()<< " descriptor written success...";
 }
 
 void bluetooth_controller::slot_service_character_written(const QLowEnergyCharacteristic &characteristic, const QByteArray &value) // 发送成功
 {
     QByteArray hex_array = value.toHex(':');
-    qDebug() << "slot service character written success..." << hex_array.data();
-    
-    ble_notify_service_->readCharacteristic(notify_characteristic_);   // 接收数据
+    qDebug() << "data written success..." << hex_array.data();
 }
 
 // 特征为read时收到ble回传的数据会触发该函数
-void bluetooth_controller::slot_service_recv_data(const QLowEnergyCharacteristic &c, const QByteArray &value)
+void bluetooth_controller::receive_notify_data(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
     QByteArray hex_array = value.toHex(':');
-    qDebug() << "bluetooth recv , character = " << c.uuid().toString() << ", data_len = " << value.size() << ", data = " << hex_array.data();
+    qDebug() << "bluetooth recvive notify data:" << hex_array.data();
 }
 
 // BLE服务发生错误的槽函数
@@ -450,18 +403,34 @@ void bluetooth_controller::write(const QByteArray &data)
     }
 }
 
-void bluetooth_controller::test_send()
+void bluetooth_controller::test_send1()
 {
     // 在这里写一条数据试试
         // 握手命令蓝牙
         //        5A 05 82 E2 D2
-               uint8_t arr[] = {0x5A, 0x05, 0x82, 0xE2, 0xD2};
-        // 取得设备记录条数
+        uint8_t arr[] = {0x5A, 0x05, 0x82, 0xE2, 0xD2};
+    
+        QByteArray byte;
+        byte = QByteArray((char*)arr,sizeof (arr));
+        write(byte);
+}
+
+void bluetooth_controller::test_send2()
+{
+          // 取得设备记录条数
         //        5A 05 53 BE 12
-        // uint8_t arr[] = {0x5A, 0x05, 0x53, 0xBE, 0x12};
+        uint8_t arr[] = {0x5A, 0x05, 0x53, 0xBE, 0x12};
+
+        QByteArray byte;
+        byte = QByteArray((char*)arr,sizeof (arr));
+        write(byte);
+}
+
+void bluetooth_controller::test_send3()
+{
         // 读取得指定记录数据命令
         //        5A 07 54 00 1E A1 BC
-        //  uint8_t arr[] = {0x5A, 0x07, 0x54, 0x1E, 0xA1,0xBC};
+         uint8_t arr[] = {0x5A, 0x07, 0x54, 0x1E, 0xA1,0xBC};
 
 
         QByteArray byte;

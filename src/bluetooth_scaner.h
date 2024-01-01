@@ -17,6 +17,8 @@ public:
     void scan_bluetooth();
     bool is_device_found();
     void set_device_name(std::string name);
+    void set_device_mac(std::string mac);
+    void set_device_address(std::string address);
     QBluetoothDeviceInfo get_device_info();
 
 
@@ -33,8 +35,9 @@ private:
     QBluetoothDeviceDiscoveryAgent *device_discovery_agent_;                        // 设备发现代理
     QBluetoothDeviceInfo device_info_;                                              // 设备信息
     bool found_device_;                                                             // 是否找到设备
+    std::string device_address_;                                                    // 设备地址
     std::string device_name_;                                                       // 设备名称
-
+    std::string device_mac_;                                                        // 设备MAC，可能有用
 signals:
 
 };

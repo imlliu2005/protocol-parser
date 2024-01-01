@@ -7,7 +7,7 @@
 #include "bluetooth_service.h"
 #include <QtBluetooth/QLowEnergyDescriptor>                                               //ble 描述符
 #include <QtBluetooth/QLowEnergyService>                                                  //ble 服务
-#include <QtBluetooth/QLowEnergyCharacteristic>                                           //ble特性
+#include <QtBluetooth/QLowEnergyCharacteristic>                                           //ble 特性
 
 const std::string WRITE_SERVER_UUID = "0000ffe5-0000-1000-8000-00805f9b34fb";             //65509
 const std::string WRITE_CHARACTERISTIC_UUID = "0000ffe9-0000-1000-8000-00805f9b34fb";     //65513
@@ -30,31 +30,33 @@ public:
     void connect_notify_service();
     // 向蓝牙设备写入数据
     void write(const QByteArray &data);
-    void test_send();
+    void test_send1();
+    void test_send2();
+    void test_send3();
 
 private:
+    // 接收通知数据
+    void receive_notify_data(const QLowEnergyCharacteristic &c, const QByteArray &value);    
     // 发现服务相关
     void bind_device_slot();
     void bind_write_service_slot();
     void bind_notify_service_slot();
     // 连接设备相关
+    void slot_device_disconnected();
     void slot_device_connected();                                           // 设备连接成功
     void slot_device_connect_error(QLowEnergyController::Error error);      // 设备连接出现错误
     // 发现服务
     void slot_service_discovered_one(QBluetoothUuid service_uuid);          // 发现一个服务
     void slot_service_discovery_finish();                                   // 服务发现结束
     // 服务相关的
-    void slot_write_service_state_changed(QLowEnergyService::ServiceState state);                                          // 监听服务状态变化
-    void slot_notify_service_state_changed(QLowEnergyService::ServiceState state);                                          // 监听服务状态变化
-    void slot_service_characteristic_changed(QLowEnergyCharacteristic characteristic, QByteArray value);             // 服务的characteristic变化,有数据传来
-    void slot_service_error(QLowEnergyService::ServiceError error);                                                  // 错误处理
+    void slot_write_service_state_changed(QLowEnergyService::ServiceState state);                                 // 监听服务状态变化
+    void slot_notify_service_state_changed(QLowEnergyService::ServiceState state);                                // 监听服务状态变化
+    void slot_service_characteristic_changed(QLowEnergyCharacteristic characteristic, QByteArray value);          // 服务的characteristic变化,有数据传来
+    void slot_service_error(QLowEnergyService::ServiceError error);                                               // 错误处理
     void slot_service_descriptor_written(const QLowEnergyDescriptor &descriptor, const QByteArray &value);        // 描述符成功被写
-    void slot_service_character_written(const QLowEnergyCharacteristic &characteristic, const QByteArray &value); // 发送成功
-    void slot_service_recv_data(const QLowEnergyCharacteristic &c, const QByteArray &value);       
+    void slot_service_character_written(const QLowEnergyCharacteristic &characteristic, const QByteArray &value); // 发送成功   
 
 private:
-    
-    bool device_connected_;                                                 // 设备是否连接
     bluetooth_scaner* ble_scaner_;                                          // 蓝牙扫描对象
     bluetooth_service* bluetooth_service_;                                  // 数据服务对象
     QLowEnergyController* ble_controller_;                                  // 低功耗蓝牙控制
