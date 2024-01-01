@@ -26,8 +26,8 @@ public:
     void discover_devices();
     void connect_device();
     void discover_services();
-    void connect_write_service();
-    void connect_notify_service();
+    void create_write_service_object();
+    void create_notify_service_object();
     // 向蓝牙设备写入数据
     void write(const QByteArray &data);
     void test_send1();
