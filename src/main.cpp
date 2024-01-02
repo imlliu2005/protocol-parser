@@ -1,5 +1,6 @@
 #include <QCoreApplication>
 #include "bluetooth_controller.h"
+using namespace medex::hut;
 
 int main(int argc, char *argv[])
 {
