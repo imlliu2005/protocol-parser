@@ -1,5 +1,16 @@
+/*
+ * @Description:
+ * @Author: liuning
+ * @LastEditors: liuning
+ * @Date: 2023-12-28
+ * @Copyright: 北京麦迪克斯科技有限公司
+ * @LastEditTime: 2023-12-29
+ * @FilePath: 
+ */
+
 #include "bluetooth_controller.h"
-#include "bluetooth_instructions.h"
+#include "util.h"
+#include "package_instructions.h"
 
 namespace medex 
 {
@@ -81,7 +92,7 @@ namespace medex
         void bluetooth_controller::slot_device_connected()
         {
             qDebug() << "device connected success and begin discover service...";
-             QTimer::singleShot(1000, [=](){
+            QTimer::singleShot(1000, [=](){
                 this->discover_services();
             });
         }
@@ -96,33 +107,29 @@ namespace medex
             qDebug() << "connect device error..." << error;
         }
 
-        void bluetooth_controller::create_ble_controller()
+        void bluetooth_controller::discover_devices()
+        {
+            connect(ble_scaner_, &bluetooth_scaner::signal_device_found,this, &bluetooth_controller::slot_device_found);
+            ble_scaner_->scan_bluetooth();
+        }
+
+        void bluetooth_controller::slot_device_found()
+        {
+            qDebug() << "begin connect device...";
+            connect_device();
+        }
+
+        void bluetooth_controller::connect_device()
         {
             ble_controller_ = QLowEnergyController::createCentral(ble_scaner_->get_device_info()); // central相当于是主机
             if (ble_controller_) 
             {
                 bind_device_slot();
-            }
-            else
-            {
-                qDebug() << "create controller failed...";
-            }
-        }
-
-        void bluetooth_controller::discover_devices()
-        {
-            ble_scaner_->scan_bluetooth();
-        }
-
-        void bluetooth_controller::connect_device()
-        {
-            if(ble_scaner_->is_device_found())
-            {
                 ble_controller_->connectToDevice();
             }
             else
             {
-                qDebug()<<"can not found device...";
+                qDebug() << "create controller failed...";
             }
         }
 
@@ -134,17 +141,17 @@ namespace medex
         // 发现一个服务
         void bluetooth_controller::slot_service_discovered_one(QBluetoothUuid service_uuid)
         {
-            qDebug() << "found one service uuid:"<< service_uuid.toString() << " toUint:" << service_uuid.toUInt32();
+            // qDebug() << "found one service uuid:"<< service_uuid.toString() << " toUint:" << service_uuid.toUInt32();
 
             if (service_uuid == QBluetoothUuid(QString::fromStdString(WRITE_SERVER_UUID)))
             {
-                qDebug() << "found write service uuid:" << service_uuid.toString();
+                // qDebug() << "found write service uuid:" << service_uuid.toString();
                 wirte_service_uuid_ = service_uuid;
             }
 
             if (service_uuid == QBluetoothUuid(QString::fromStdString(NOTIFY_SERVER_UUID)))
             {
-                qDebug() << "found notify service uuid:" << service_uuid.toString();
+                // qDebug() << "found notify service uuid:" << service_uuid.toString();
                 notify_service_uuid_ = service_uuid;
             }
         }
@@ -199,7 +206,6 @@ namespace medex
         {
             if (QLowEnergyService::ServiceDiscovered == state) // 发现服务
             {
-                qDebug() << "write service state is ServiceDiscovered...";
                 QList<QLowEnergyCharacteristic> list = ble_write_service_->characteristics();
                 for (int i = 0; i < list.count(); i++)
                 {
@@ -208,47 +214,29 @@ namespace medex
                     // 如果当前characteristic有效
                     if (cur_character.isValid())
                     {
-                        qDebug() << "cur_character(" << i << ")is valid"
-                            << "\nname:" << cur_character.name()
-                            << "\nproperty:" << cur_character.properties()
-                            << "\nuuid:" << cur_character.uuid().toString()
-                            << "\nisvalid:" << cur_character.isValid()
-                            << "\nvalue:" << cur_character.value().data()
-                            << "\ndescriptors count:" << cur_character.descriptors().count();
 
-                        QList<QLowEnergyDescriptor> desc_list = cur_character.descriptors();
-                        for (int d = 0; d < desc_list.count(); d++)
-                        {
-                            qDebug() << "descriptor[" << d << "]: name: " << desc_list.at(d).name()
-                                << "\ntype: " << desc_list.at(d).type()
-                                << "\nuuid: " << desc_list.at(d).uuid().toString()
-                                << "\nvalue: " << desc_list.at(d).value();
-                        }
                         if (cur_character.properties() & QLowEnergyCharacteristic::WriteNoResponse)
-                        {
-                            qDebug() << "this characteristic has WriteNoResponse property" << cur_character.uuid().toString();
-                        }
+                        {}
                         if (cur_character.properties() & QLowEnergyCharacteristic::Write)
                         {
                             write_characteristic_ = cur_character;
                             write_mode_ = QLowEnergyService::WriteWithResponse;
-                            qDebug() << "this characteristic has Write property" << cur_character.uuid().toString();
+                            // qDebug() << "characteristic has Write property" << cur_character.uuid().toString();
 
                             // 在这里发送测试数据
-                            // 发送测试数据
                             QTimer::singleShot(1000, [=](){
-                                this->test_send();
+                                this->test();
                             });
                         }
                         if (cur_character.properties() & QLowEnergyCharacteristic::Read)
                         {
                             read_characteristic_ = cur_character;
-                            qDebug() << "this characteristic has Read property" << cur_character.uuid().toString();
+                            // qDebug() << "characteristic has Read property" << cur_character.uuid().toString();
                         }
                         if (cur_character.properties() & QLowEnergyCharacteristic::Notify)
                         {
                             notify_characteristic_ = cur_character;
-                            qDebug() << "this characteristic has Notify property" << cur_character.uuid().toString();
+                            // qDebug() << "characteristic has Notify property" << cur_character.uuid().toString();
                         }
 
                         // 描述符定义特征如何由特定客户端配置
@@ -267,9 +255,7 @@ namespace medex
         {
             if (QLowEnergyService::ServiceDiscovered == state) // 发现服务
             {
-                qDebug() << "notify service state is ServiceDiscovered...";
                 QList<QLowEnergyCharacteristic> list = ble_notify_service_->characteristics();
-                qDebug() << "QLowEnergyCharacteristic list count:" << list.count();
                 for (int i = 0; i < list.count(); i++)
                 {
                     // 当前位置的bleCharacteritic
@@ -277,43 +263,25 @@ namespace medex
                     // 如果当前characteristic有效
                     if (cur_character.isValid())
                     {
-                        qDebug() << "cur_character("<< i <<") is valid"
-                            << "\nname:" << cur_character.name()
-                            << "\nproperty:" << cur_character.properties()
-                            << "\nuuid:" << cur_character.uuid().toString()
-                            << "\nisvalid:" << cur_character.isValid()
-                            << "\nvalue:" << cur_character.value()
-                            << "\ndescriptors count:" << cur_character.descriptors().count();
-
-                        QList<QLowEnergyDescriptor> desc_list = cur_character.descriptors();
-                        for (int d = 0; d < desc_list.count(); d++)
-                        {
-                            qDebug() << "descriptor[" << d << "] name:" 
-                                << desc_list.at(d).name()
-                                << "\ntype:" << desc_list.at(d).type()
-                                << "\nuuid:" << desc_list.at(d).uuid().toString()
-                                << "\nvalue:" << desc_list.at(d).value();
-                        }
-
                         if (cur_character.properties() & QLowEnergyCharacteristic::WriteNoResponse)
                         {
-                            qDebug() << "this characteristic has WriteNoResponse property" << cur_character.uuid().toString();
+                            // qDebug() << "characteristic has WriteNoResponse property" << cur_character.uuid().toString();
                         }
                         if (cur_character.properties() & QLowEnergyCharacteristic::Write)
                         {
                             write_characteristic_ = cur_character;
                             write_mode_ = QLowEnergyService::WriteWithResponse;
-                            qDebug() << "this characteristic has Write property" << cur_character.uuid().toString();
+                            // qDebug() << "characteristic has Write property" << cur_character.uuid().toString();
                         }
                         if (cur_character.properties() & QLowEnergyCharacteristic::Read)
                         {
                             read_characteristic_ = cur_character;
-                            qDebug() << "this characteristic has Read property" << cur_character.uuid().toString();
+                            // qDebug() << "characteristic has Read property" << cur_character.uuid().toString();
                         }
                         if (cur_character.properties() & QLowEnergyCharacteristic::Notify)
                         {
                             notify_characteristic_ = cur_character;
-                            qDebug() << "this characteristic has Notify property" << cur_character.uuid().toString();
+                            // qDebug() << "characteristic has Notify property" << cur_character.uuid().toString();
                         }
 
                         // 描述符定义特征如何由特定客户端配置
@@ -335,10 +303,12 @@ namespace medex
         // 特性发生变化的槽函数，处理接收数据：
         void bluetooth_controller::slot_service_characteristic_changed(QLowEnergyCharacteristic c, QByteArray value)
         {
+            // QByteArray hex_array = value.toHex(':');
+            // qDebug() << "bluetooth recvive notify data:" << hex_array.data();
             if (QLowEnergyCharacteristic::Notify == c.properties())
             {
                 // 接收通知数据
-                receive_notify_data(c, value);
+                parser_->parser_receive_data(value);
             }
         }
 
@@ -346,22 +316,13 @@ namespace medex
         {
             QByteArray hex_array = value.toHex(':');
             // 当描述符descriptor被正确地写入值之后，BLE通讯就成功建立。
-            qDebug() <<"descriptor: "  << descriptor.uuid().toString()<<" value:" << hex_array.data()<< " descriptor written success...";
+            // qDebug() <<"descriptor: "  << descriptor.uuid().toString()<<" value:" << hex_array.data()<< " descriptor written success...";
         }
 
         void bluetooth_controller::slot_service_character_written(const QLowEnergyCharacteristic &characteristic, const QByteArray &value) // 发送成功
         {
-            QByteArray hex_array = value.toHex(':');
-            qDebug() << "data written success..." << hex_array.data();
-        }
-
-        // 特征为read时收到ble回传的数据会触发该函数
-        void bluetooth_controller::receive_notify_data(const QLowEnergyCharacteristic &c, const QByteArray &value)
-        {
-            QByteArray hex_array = value.toHex(':');
-            qDebug() << "bluetooth recvive notify data:" << hex_array.data();
-            // 将收到的数据通知出去
-            emit receive_data_singnal(value);
+            // QByteArray hex_array = value.toHex(':');
+            // qDebug() << "send instituation  success data:" << hex_array.data();
         }
 
         // BLE服务发生错误的槽函数
@@ -403,18 +364,18 @@ namespace medex
             loop.exec();
         }
 
-        void bluetooth_controller::write(uint8_t* arr, uint16_t len)
+        void bluetooth_controller::send_instruction(uint8_t *arr)
         {
-            QByteArray data = QByteArray((char*)arr, len);
+            QByteArray data = uint8array_to_qbytearray(arr,arr[1]);
             if(ble_write_service_ && write_characteristic_.isValid())
             {
                 if(data.length() > CHUNK_SIZE)
                 {
-                    int sentBytes = 0;
-                    while (sentBytes < data.length())
+                    int sent_bytes = 0;
+                    while (sent_bytes < data.length())
                     {
-                        ble_write_service_->writeCharacteristic(write_characteristic_,data.mid(sentBytes, CHUNK_SIZE),write_mode_);
-                        sentBytes += CHUNK_SIZE;
+                        ble_write_service_->writeCharacteristic(write_characteristic_,data.mid(sent_bytes, CHUNK_SIZE),write_mode_);
+                        sent_bytes += CHUNK_SIZE;
                         if(write_mode_ == QLowEnergyService::WriteWithResponse)
                         {
                             wait_for_write();
@@ -433,37 +394,74 @@ namespace medex
             }
         }
 
-        void bluetooth_controller::test_send()
+        void bluetooth_controller::test() 
         {
-            // 握手命令蓝牙
-            // 5A 05 82 E2 D2
-            // write(hand_shake_cmd, sizeof(hand_shake_cmd));
+            // 获取数据
+            // QTimer::singleShot(1000, [=](){
+            //     send_instruction(get_record_count_cmd());
+            // });
 
-            // 取得设备记录条数
-            // 5A 05 53 BE 12
-            // write(get_record_count_cmd, sizeof(get_record_count_cmd));
+            // 数据清空
+            // QTimer::singleShot(1000, [=](){
+            //     std::cout << "clean_device_records_cmd" << std::endl;
+            //     send_instruction(clean_device_records_cmd());
+            // });
 
-            // 读取得指定记录数据命令
-            // 5A 07 54 00 1E A1 BC
-            // write(get_specified_record_cmd, sizeof(get_specified_record_cmd));
+            // 禁止按键
+            // QTimer::singleShot(1000, [=](){
+            //     send_instruction(set_push_key_disabled_cmd());
+            // });
+            
+            // 启用按键
+            // QTimer::singleShot(1000, [=](){
+            //     send_instruction(set_push_key_enabled_cmd());
+            // });
 
-            // 设置 5 分钟后开始测量：
-            // write(set_auto_5min_measure_cmd, sizeof(set_auto_5min_measure_cmd));
 
-            // 禁止 5 分钟后开始测量：
-            // write(set_disable_auto_5min_measure_cmd, sizeof(set_disable_auto_5min_measure_cmd));
+            // 设置5分钟后开始测量 
+            // QTimer::singleShot(1000, [=](){
+            //     send_instruction(set_auto_5min_measure_enabled_cmd());
+            // });
 
-            // 设备内记录清 0：
-            // write(clean_device_records_cmd, sizeof(clean_device_records_cmd));
+            // 设置标准测量方式/固定测量方式 
+            // QTimer::singleShot(1000, [=](){
+            //     send_instruction(set_fixed_time_measure_cmd());
+            // });
+            // 设置白天启动时间 9:30
+            // QTimer::singleShot(2000, [=](){
+            //     send_instruction(set_day_begin_time_cmd(16,00));
+            // });
+            // 设置白天时间间隔 10 
+            // QTimer::singleShot(3000, [=](){
+            //     send_instruction(set_day_interval_time_cmd(30));
+            // });
+
+            // 设置夜间启动时间 19:00
             QTimer::singleShot(1000, [=](){
-                write(get_record_count_cmd, sizeof(get_record_count_cmd));
+                send_instruction(set_night_begin_time_cmd(20,00));
             });
+            // 设置夜间时间间隔 30 
             QTimer::singleShot(2000, [=](){
-                write(clean_device_records_cmd, sizeof(clean_device_records_cmd));
+                send_instruction(set_night_interval_time_cmd(10));
             });
-            QTimer::singleShot(4000, [=](){
-                write(get_record_count_cmd, sizeof(get_record_count_cmd));
-            });
+
+
+            // 设置特别时间使用标志
+            // QTimer::singleShot(1000, [=](){
+            //     send_instruction(set_special_time_measure_enabled_cmd();
+            // });
+            // 设置特殊1开始时间
+            // QTimer::singleShot(2000, [=](){
+            //     send_instruction(set_special_one_begin_time_cmd(11, 30));
+            // });
+            // 设置特殊1结束时间
+            // QTimer::singleShot(3000, [=](){
+            //     send_instruction(set_special_one_end_time_cmd(12, 30));
+            // });
+            // 设置特殊1间隔时间
+            // QTimer::singleShot(4000, [=](){
+            //     send_instruction(set_special_one_interval_time_cmd(20));
+            // });
         }
-    }// hut
+    } // hut
 }// medex

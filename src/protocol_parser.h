@@ -1,3 +1,13 @@
+/*
+ * @Description:
+ * @Author: liuning
+ * @LastEditors: liuning
+ * @Date: 2023-12-29
+ * @Copyright: 北京麦迪克斯科技有限公司
+ * @LastEditTime: 2024-1-2 
+ * @FilePath: 
+ */
+
 #ifndef PROTOCOL_PARSER_H
 #define PROTOCOL_PARSER_H
 
@@ -8,7 +18,6 @@ namespace medex
 {
     namespace hut
     {
-        
         class bluetooth_controller;
 
         typedef struct record_data // 血压记录的详细记录
@@ -35,20 +44,17 @@ namespace medex
         public:
             protocol_parser(bluetooth_controller *bc);
             ~protocol_parser();
+            // receive data slot
+            void parser_receive_data(QByteArray value);
 
-        public:
-        // receice data slot
-        void receive_data_slot(QByteArray value);
-
-        private:
-        void parse_record_data(uint8_t* data);
+            signals:
 
         private:
-        bluetooth_controller *bc_; 
-        data_frame* df_;                // 协议包解析类对象     
-        uint16_t record_count_;         // 数据记录条数
-        record_data rd_;                // 返回血压计指定记录的详细数据
-        signals:
+            record_data parse_record_data(uint8_t* data);
+
+        private:
+            bluetooth_controller *bc_; 
+            data_frame* df_;                // 协议包解析类对象     
 
         };
     }// hut

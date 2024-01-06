@@ -1,3 +1,13 @@
+/*
+ * @Description:
+ * @Author: liuning
+ * @LastEditors: liuning
+ * @Date: 2023-12-27 
+ * @Copyright: 北京麦迪克斯科技有限公司
+ * @LastEditTime: 2023-12-27 
+ * @FilePath: 
+ */
+
 #ifndef BLUETOOTH_SCANER_H
 #define BLUETOOTH_SCANER_H
 
@@ -39,7 +49,8 @@ namespace medex
             std::string device_name_;                                                       // 设备名称
             std::string device_mac_;                                                        // 设备MAC，可能有用
         signals:
-
+        void signal_device_found();
+        
         };
 
     }// hut

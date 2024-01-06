@@ -1,3 +1,13 @@
+/*
+ * @Description:
+ * @Author: liuning
+ * @LastEditors: liuning
+ * @Date: 2023-12-27
+ * @Copyright: 北京麦迪克斯科技有限公司
+ * @LastEditTime: 2023-12-27
+ * @FilePath: 
+ */
+
 #include "bluetooth_scaner.h"
 #include <QDebug>
 #include <QtBluetooth/QBluetoothUuid>                 //蓝牙uuid
@@ -79,15 +89,16 @@ namespace medex
             // 名称不为空且是低功耗蓝牙,则考虑加进去
             if (dev_info.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration)
             {
-                qDebug() << "LowEnergyCoreConfiguration device name:" << dev_info.name()
-                    << " address:" << dev_info.address()
-                    << " uuid:" << dev_info.deviceUuid();
+                // qDebug() << "LowEnergyCoreConfiguration device name:" << dev_info.name()
+                //     << " address:" << dev_info.address()
+                //     << " uuid:" << dev_info.deviceUuid();
                 if (0 == device_name_.compare(dev_info.name().toStdString()))
                 {
                     qDebug() << "found required device:" << dev_info.name();
                     device_info_ = dev_info;
                     found_device_ = true;
                     device_discovery_agent_->stop();
+                     emit signal_device_found();
                 }
             }
         }

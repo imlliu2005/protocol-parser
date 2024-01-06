@@ -16,7 +16,8 @@
                     "value": "c:/Qt/Qt5.14.2/5.14.2/msvc2017_64/bin"
                 }
             ],
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "visualizerFile": "c:\\Users\\wangxuan\\AppData\\Roaming\\Code\\User\\workspaceStorage\\6412cc0a8b54513f8de5ff50868c11ae\\tonka3000.qtvsctools\\qt.natvis.xml"
         }
     ]
 }

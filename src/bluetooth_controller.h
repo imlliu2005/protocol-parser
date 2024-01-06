@@ -1,3 +1,13 @@
+/*
+ * @Description:
+ * @Author: liuning
+ * @LastEditors: liuning
+ * @Date: 2023-12-28
+ * @Copyright: 北京麦迪克斯科技有限公司
+ * @LastEditTime: 2023-12-29
+ * @FilePath: 
+ */
+
 #ifndef BLUETOOTH_CONTROLLER_H
 #define BLUETOOTH_CONTROLLER_H
 
@@ -29,16 +39,15 @@ namespace medex
         public:
             explicit bluetooth_controller(QObject *parent = nullptr);
             ~bluetooth_controller();
-            void create_ble_controller();
             void discover_devices();
             void connect_device();
-            // 向蓝牙设备写入数据
-            void write(uint8_t* arr, uint16_t len);
+            void send_instruction(uint8_t* arr);                                      // 向蓝牙设备写入数据
+            void test();
+
         private:
             void discover_services();
             void create_write_service_object();
             void create_notify_service_object();
-            void test_send();
             void wait_for_write();
             // 接收通知数据
             void receive_notify_data(const QLowEnergyCharacteristic &c, const QByteArray &value);    
@@ -47,13 +56,13 @@ namespace medex
             void bind_write_service_slot();
             void bind_notify_service_slot();
             // 连接设备相关
+            void slot_device_found();                                               // 找到设备
             void slot_device_disconnected();
             void slot_device_connected();                                           // 设备连接成功
             void slot_device_connect_error(QLowEnergyController::Error error);      // 设备连接出现错误
-            // 发现服务
+            // 服务相关的
             void slot_service_discovered_one(QBluetoothUuid service_uuid);          // 发现一个服务
             void slot_service_discovery_finish();                                   // 服务发现结束
-            // 服务相关的
             void slot_write_service_state_changed(QLowEnergyService::ServiceState state);                                 // 监听服务状态变化
             void slot_notify_service_state_changed(QLowEnergyService::ServiceState state);                                // 监听服务状态变化
             void slot_service_characteristic_changed(QLowEnergyCharacteristic characteristic, QByteArray value);          // 服务的characteristic变化,有数据传来
@@ -75,7 +84,7 @@ namespace medex
             QLowEnergyService::WriteMode write_mode_;                               // 写入模式
 
         signals:
-            void receive_data_singnal(QByteArray data);
+
         };
     }// hut
 }// medex
