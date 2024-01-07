@@ -54,7 +54,9 @@ namespace medex
 
         private:
             bluetooth_controller *bc_; 
-            data_frame* df_;                // 协议包解析类对象     
+            data_frame* df_;                            // 协议包解析类对象    
+            uint16_t record_count_;                     // 数据记录条数 
+            uint16_t previously_record_count_;          // 数据记录条数 
 
         };
     }// hut

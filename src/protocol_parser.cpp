@@ -94,17 +94,16 @@ namespace medex
             const uint8_t* arr = reinterpret_cast<const uint8_t*>(value.data());
             if (df_->parse(arr)) 
             {
-                uint16_t record_count;         // 数据记录条数
                 switch (df_->instruction_)
                 {
                     case 0x44: // 设置 5 分钟后开始测量
                         if (df_->data_[0] == 0x01)
                         {
-                            qDebug() << "instituation is 0x44 enable measured every 5 minutes...";
+                            qDebug() << "instituation is 0x44 enable measured 5 minutes later...";
                         }
                         else if (df_->data_[0] == 0x00)
                         {
-                            qDebug() << "instituation is 0x44 disabled measured every 5 minutes...";
+                            qDebug() << "instituation is 0x44 disabled measured 5 minutes later...";
                         }
                     break; 
 
@@ -131,9 +130,9 @@ namespace medex
                         break;
 
                     case 0x53: // 取得设备记录条数
-                        record_count = merge_byte_to_uint16(df_->data_[0], df_->data_[1]);
-                        qDebug() << "instituation is 0x53 get reord counts: "<< record_count << "...";
-                        for (int i = 0; i < record_count; i++) 
+                        record_count_ = merge_byte_to_uint16(df_->data_[0], df_->data_[1]);
+                        qDebug() << "instituation is 0x53 get reord counts: "<< record_count_ << "...";
+                        for (int i = 0; i < record_count_; i++) 
                         {   
                             uint8_t * cmd = get_specified_record_cmd(i);
                             bc_->send_instruction(cmd);

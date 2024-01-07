@@ -397,15 +397,15 @@ namespace medex
         void bluetooth_controller::test() 
         {
             // 获取数据
-            QTimer::singleShot(1000, [=](){
-                send_instruction(get_record_count_cmd());
-            });
+            // QTimer::singleShot(1000, [=](){
+            //     send_instruction(get_record_count_cmd());
+            // });
 
             // 数据清空
-            // QTimer::singleShot(1000, [=](){
-            //     std::cout << "clean_device_records_cmd" << std::endl;
-            //     send_instruction(clean_device_records_cmd());
-            // });
+            QTimer::singleShot(1000, [=](){
+                std::cout << "clean_device_records_cmd" << std::endl;
+                send_instruction(clean_device_records_cmd());
+            });
 
             // 禁止按键
             // QTimer::singleShot(1000, [=](){
@@ -423,15 +423,20 @@ namespace medex
             //     send_instruction(set_auto_5min_measure_enabled_cmd());
             // });
 
+            // 设置5分钟后停止测量 
+            QTimer::singleShot(2000, [=](){
+                send_instruction(set_auto_5min_measure_disabled_cmd());
+            });
+
             // 设置标准测量方式/固定测量方式 
             // QTimer::singleShot(1000, [=](){
             //     send_instruction(set_fixed_time_measure_cmd());
             // });
-            // // // 设置白天启动时间 9:30
+            // // 设置白天启动时间 9:30
             // QTimer::singleShot(2000, [=](){
-            //     send_instruction(set_day_begin_time_cmd(11,50));
+            //     send_instruction(set_day_begin_time_cmd(9,0));
             // });
-            // // // 设置白天时间间隔 10 
+            // // 设置白天时间间隔 10 
             // QTimer::singleShot(3000, [=](){
             //     send_instruction(set_day_interval_time_cmd(20));
             // });
