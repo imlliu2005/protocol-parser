@@ -397,9 +397,9 @@ namespace medex
         void bluetooth_controller::test() 
         {
             // 获取数据
-            // QTimer::singleShot(1000, [=](){
-            //     send_instruction(get_record_count_cmd());
-            // });
+            QTimer::singleShot(1000, [=](){
+                send_instruction(get_record_count_cmd());
+            });
 
             // 数据清空
             // QTimer::singleShot(1000, [=](){
@@ -429,38 +429,38 @@ namespace medex
             // });
             // 设置白天启动时间 9:30
             // QTimer::singleShot(2000, [=](){
-            //     send_instruction(set_day_begin_time_cmd(16,00));
+            //     send_instruction(set_day_begin_time_cmd(9,00));
             // });
             // 设置白天时间间隔 10 
             // QTimer::singleShot(3000, [=](){
-            //     send_instruction(set_day_interval_time_cmd(30));
+            //     send_instruction(set_day_interval_time_cmd(20));
             // });
 
             // 设置夜间启动时间 19:00
-            QTimer::singleShot(1000, [=](){
-                send_instruction(set_night_begin_time_cmd(20,00));
-            });
-            // 设置夜间时间间隔 30 
-            QTimer::singleShot(2000, [=](){
-                send_instruction(set_night_interval_time_cmd(10));
-            });
-
-
-            // 设置特别时间使用标志
             // QTimer::singleShot(1000, [=](){
-            //     send_instruction(set_special_time_measure_enabled_cmd();
+            //     send_instruction(set_night_begin_time_cmd(20,00));
             // });
-            // 设置特殊1开始时间
+            // // 设置夜间时间间隔 30 
             // QTimer::singleShot(2000, [=](){
-            //     send_instruction(set_special_one_begin_time_cmd(11, 30));
+            //     send_instruction(set_night_interval_time_cmd(10));
             // });
-            // 设置特殊1结束时间
+
+
+            // // 设置特别时间使用标志
+            // QTimer::singleShot(1000, [=](){
+            //     send_instruction(set_special_time_measure_enabled_cmd());
+            // });
+            // // 设置特殊1开始时间
+            // QTimer::singleShot(2000, [=](){
+            //     send_instruction(set_special_one_begin_time_cmd(10, 00));
+            // });
+            // // 设置特殊1结束时间
             // QTimer::singleShot(3000, [=](){
-            //     send_instruction(set_special_one_end_time_cmd(12, 30));
+            //     send_instruction(set_special_one_end_time_cmd(10, 30));
             // });
-            // 设置特殊1间隔时间
+            // // 设置特殊1间隔时间
             // QTimer::singleShot(4000, [=](){
-            //     send_instruction(set_special_one_interval_time_cmd(20));
+            //     send_instruction(set_special_one_interval_time_cmd(10));
             // });
         }
     } // hut

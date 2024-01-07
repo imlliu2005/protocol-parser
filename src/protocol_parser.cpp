@@ -145,7 +145,7 @@ namespace medex
                         break;
                     
                     case 0x49: // 设置白天时间间隔
-                        qDebug() << "instituation is 0x49S set day interval time...";
+                        qDebug() << "instituation is 0x49 set day interval time...";
                         break;
 
                     case 0x4A: // 设置夜间开始时间
@@ -175,6 +175,17 @@ namespace medex
 
                     case 0x57: // 设备内记录清 0
                         qDebug() << "instituation is 0x57 clear records...";
+                    break;
+
+                    case 0x58:
+                        if (df_->data_[0] == 0x01)
+                        {
+                            qDebug() << "instituation is 0x58 set special time measure enabled cmd...";
+                        }
+                        else if (df_->data_[0] == 0x00)
+                        {
+                            qDebug() << "instituation is 0x58 set special time measure disabled cmd...";
+                        }
                     break;
 
                 default:
