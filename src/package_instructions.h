@@ -28,12 +28,14 @@ namespace medex
         // 4.设置5分钟后开始测量 0x5A 0x06 0x44 0x01 crc16  主机发送设置5分钟后是否启动测量 0x01:启用 0x00:禁用
         uint8_t* set_auto_5min_measure_enabled_cmd();
         uint8_t* set_auto_5min_measure_disabled_cmd();
-        // 6.是否屏幕显示 0x01 启用 0x00:禁用 0x5A 0x06 0x46 0x01 crc16
-        uint8_t* set_screen_show_enabled_cmd();
-        uint8_t* set_screen_show_disabled_cmd();
+        
         // 5.是否使用按键 0x01 启用 0x00:禁用 0x5A 0x06 0x45 0x00 crc16
         uint8_t* set_push_key_enabled_cmd();
         uint8_t* set_push_key_disabled_cmd();
+
+        // 6.是否屏幕显示 0x01 启用 0x00:禁用 0x5A 0x06 0x46 0x01 crc16
+        uint8_t* set_screen_show_enabled_cmd();
+        uint8_t* set_screen_show_disabled_cmd();
 
         // 7.设置固定/标准时间测量模式 0x01:固定 0x00:标准  0x5A 0x06 0x46 0x01 crc16
         uint8_t* set_fixed_time_measure_cmd();
@@ -124,6 +126,61 @@ namespace medex
 
         // 36.设置 DIA 报警下限阀值 0x5A 0x07 0x66 0x00 0x64 crc16
         uint8_t* set_dia_alarm_low_limit_cmd(int number);
+
+        // 37.上传白天开始时间 0x5A 0x05 0x70 crc16
+        uint8_t* upload_day_begin_time_cmd();
+
+        // 38.上传夜间开始时间 0x5A 0x05 0x71 crc16
+        uint8_t* upload_night_begin_time_cmd();
+
+        // 39.上传特殊时间标志 0x5A 0x05 0x72 crc16
+        uint8_t* upload_special_enable_flag_cmd();
+
+        // 40.上传特殊 1 开始时间 0x5A 0x05 0x73 crc16
+        uint8_t* upload_special_one_begin_time_cmd();
+
+        // 41.上传特殊 1 结束时间 0x5A 0x05 0x74 crc16
+        uint8_t* upload_special_one_end_time_cmd();
+
+        // 42、上传特殊 2 开始时间 0x5A 0x05 0x75 crc16
+        uint8_t* upload_special_two_begin_time_cmd();
+
+        // 43.上传特殊 2 结束时间 0x5A 0x05 0x76 crc16
+        uint8_t* upload_special_two_end_time_cmd();
+
+        // 44.上传特殊 3 开始时间 0x5A 0x05 0x77 crc16
+        uint8_t* upload_special_three_begin_time_cmd();
+
+        // 45.上传特殊 3 结束时间 0x5A 0x05 0x78 crc16
+        uint8_t* upload_special_three_end_time_cmd();
+
+        // 46.设置 LCD 显示的血压单位 x5A 0x06 0x7A 0x01 crc16
+
+        // 47.上传特殊 1 使用标志 0x5A 0x05 0x85 crc16
+
+        // 48.上传特殊 2 使用标志 0x5A 0x05 0x86 crc16
+
+        // 49.上传特殊 3 使用标志 0x5A 0x05 0x87 crc16
+
+        // 50.通信结束 0x5A 0x05 0x90 crc16
+
+        // 51.核准压力 0x5A 0x06 0xB3 0xFA crc16
+
+        // 52.校准压力 0x5A 0x07 0xB1 0x00 0xC8 crc16
+
+        // 53.校准状态 0x5A 0x06 0xB2 0x01 crc16
+
+        // 54.退出校准模式 0x5A 0x05 0xD5 crc16
+
+        // 55.泵阀维护模式 0x5A 0x05 0x12 crc16
+
+        // 56.控制气泵x5A 0x06 0x21 0x01 crc16
+
+        // 57、控制快阀 0x5A 0x06 0x22 0x01 crc16
+
+        // 58、控制慢阀 0x5A 0x06 0x23 0x01 crc16
+
+        // 60.读取下位机软件版本 0x5A 0x05 0x95 crc16
 
     }// hut
 }// medex

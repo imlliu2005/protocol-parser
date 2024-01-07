@@ -390,6 +390,78 @@ namespace medex
             generate_crc16_cmd(cmd);
             return cmd;
         }
+        
+        // 37.上传白天开始时间 0x5A 0x05 0x70 crc16
+        uint8_t* upload_day_begin_time_cmd()
+        {
+            static uint8_t cmd[5] = {0x5A, 0x05, 0x70};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
 
+        // 38.上传夜间开始时间 0x5A 0x05 0x71 crc16
+        uint8_t* upload_night_begin_time_cmd()
+        {
+            static uint8_t cmd[5] = {0x5A, 0x05, 0x71};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+
+        // 39.上传特殊时间标志 0x5A 0x05 0x72 crc16
+        uint8_t* upload_special_enable_flag_cmd()
+        {
+            static uint8_t cmd[5] = {0x5A, 0x05, 0x72};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+
+        // 40.上传特殊 1 开始时间 0x5A 0x05 0x73 crc16
+        uint8_t* upload_special_one_begin_time_cmd()
+        {
+            static uint8_t cmd[5] = {0x5A, 0x05, 0x73};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+
+        // 41.上传特殊 1 结束时间 0x5A 0x05 0x74 crc16
+        uint8_t* upload_special_one_end_time_cmd()
+        {
+            static uint8_t cmd[5] = {0x5A, 0x05, 0x74};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+
+        // 42、上传特殊 2 开始时间 0x5A 0x05 0x75 crc16
+        uint8_t* upload_special_two_begin_time_cmd()
+        {
+            static uint8_t cmd[5] = {0x5A, 0x05, 0x75};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+
+        // 43.上传特殊 2 结束时间 0x5A 0x05 0x76 crc16
+        uint8_t* upload_special_two_end_time_cmd()
+        {
+            static uint8_t cmd[5] = {0x5A, 0x05, 0x76};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+
+        // 44.上传特殊 3 开始时间 0x5A 0x05 0x77 crc16
+        uint8_t* upload_special_three_begin_time_cmd()
+        {
+            static uint8_t cmd[5] = {0x5A, 0x05, 0x77};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+
+        // 45.上传特殊 3 结束时间 0x5A 0x05 0x78 crc16
+        uint8_t* upload_special_three_end_time_cmd()
+        {
+            static uint8_t cmd[5] = {0x5A, 0x05, 0x78};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+        
     }// hut
 }// medex
