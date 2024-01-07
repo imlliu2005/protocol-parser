@@ -118,6 +118,12 @@ namespace medex
 
         // 34.设置特殊 3 间隔时间 主机发送设置特殊 3 间隔时间 特殊 3 间隔时间: 25 分钟 0x5A 0x06 0x62 0x19 crc16
         uint8_t* set_special_three_interval_time_cmd(int interval);
+ 
+        // 35.设置 SYS 报警下限阀值 0x5A 0x07 0x65 0x00 0x64 crc16 注：如果启用报警则当测量结束后检测到收缩压低于 100mmHg 则会报警提示；
+        uint8_t* set_sys_alarm_low_limit_cmd(int number);
+
+        // 36.设置 DIA 报警下限阀值 0x5A 0x07 0x66 0x00 0x64 crc16
+        uint8_t* set_dia_alarm_low_limit_cmd(int number);
 
     }// hut
 }// medex

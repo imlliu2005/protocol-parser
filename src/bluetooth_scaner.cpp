@@ -120,7 +120,7 @@ namespace medex
 
         void bluetooth_scaner::slot_device_cancle_scan()
         {
-            qDebug() << "device found stop scan...";
+            // qDebug() << "device found stop scan...";
         }
     }// hut
 }// medex

@@ -427,11 +427,11 @@ namespace medex
             // QTimer::singleShot(1000, [=](){
             //     send_instruction(set_fixed_time_measure_cmd());
             // });
-            // 设置白天启动时间 9:30
+            // // // 设置白天启动时间 9:30
             // QTimer::singleShot(2000, [=](){
-            //     send_instruction(set_day_begin_time_cmd(9,00));
+            //     send_instruction(set_day_begin_time_cmd(11,50));
             // });
-            // 设置白天时间间隔 10 
+            // // // 设置白天时间间隔 10 
             // QTimer::singleShot(3000, [=](){
             //     send_instruction(set_day_interval_time_cmd(20));
             // });
@@ -445,22 +445,26 @@ namespace medex
             //     send_instruction(set_night_interval_time_cmd(10));
             // });
 
-
             // // 设置特别时间使用标志
             // QTimer::singleShot(1000, [=](){
             //     send_instruction(set_special_time_measure_enabled_cmd());
             // });
             // // 设置特殊1开始时间
             // QTimer::singleShot(2000, [=](){
-            //     send_instruction(set_special_one_begin_time_cmd(10, 00));
+            //     send_instruction(set_special_one_begin_time_cmd(13, 40));
             // });
             // // 设置特殊1结束时间
             // QTimer::singleShot(3000, [=](){
-            //     send_instruction(set_special_one_end_time_cmd(10, 30));
+            //     send_instruction(set_special_one_end_time_cmd(14, 40));
             // });
             // // 设置特殊1间隔时间
             // QTimer::singleShot(4000, [=](){
             //     send_instruction(set_special_one_interval_time_cmd(10));
+            // });
+
+            // 设置禁用特别时间使用标志
+            // QTimer::singleShot(1000, [=](){
+            //     send_instruction(set_special_time_measure_disabled_cmd());
             // });
         }
     } // hut

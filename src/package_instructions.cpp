@@ -373,5 +373,23 @@ namespace medex
             return cmd;
         }
 
+        // 35.设置 SYS 报警下限阀值 0x5A 0x07 0x65 0x00 0x64 crc16 注：如果启用报警则当测量结束后检测到收缩压低于 100mmHg 则会报警提示；
+        uint8_t* set_sys_alarm_low_limit_cmd(int number)
+        {
+            uint8_t* p = (unsigned char *)&number;
+            static uint8_t cmd[7] = {0x5A, 0x07, 0x65, p[1], p[0]};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+
+        // 36.设置 DIA 报警下限阀值 0x5A 0x07 0x66 0x00 0x64 crc16
+        uint8_t* set_dia_alarm_low_limit_cmd(int number)
+        {
+            uint8_t* p = (unsigned char *)&number;
+            static uint8_t cmd[7] = {0x5A, 0x07, 0x66, p[1], p[0]};
+            generate_crc16_cmd(cmd);
+            return cmd;
+        }
+
     }// hut
 }// medex

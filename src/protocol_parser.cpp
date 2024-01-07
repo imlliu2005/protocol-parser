@@ -132,7 +132,7 @@ namespace medex
 
                     case 0x53: // 取得设备记录条数
                         record_count = merge_byte_to_uint16(df_->data_[0], df_->data_[1]);
-                        qDebug() << "instituation is 0x54 get reord counts: "<< record_count << "...";
+                        qDebug() << "instituation is 0x53 get reord counts: "<< record_count << "...";
                         for (int i = 0; i < record_count; i++) 
                         {   
                             uint8_t * cmd = get_specified_record_cmd(i);
