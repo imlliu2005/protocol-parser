@@ -161,12 +161,12 @@ namespace medex
         {
             qDebug() << "discover service finish...";
             // 创建读服务对象读取写服务详情
-            QTimer::singleShot(1000, [=](){
+            QTimer::singleShot(500, [=](){
                 this->create_write_service_object();
             });
 
             // 创建通知服务对象读取通知服务详情
-            QTimer::singleShot(1000, [=](){
+            QTimer::singleShot(1500, [=](){
                 this->create_notify_service_object();
             });
         }
